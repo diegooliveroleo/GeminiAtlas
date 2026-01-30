@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Gemini Atlas: Project Manager",
+  "version": "1.0",
+  "description": "Organiza tus chats de Gemini en carpetas.",
+  "permissions": ["storage", "activeTab"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "host_permissions": [
+    "https://gemini.google.com/*"
+  ]
+}
