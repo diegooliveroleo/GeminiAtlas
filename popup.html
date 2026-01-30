@@ -37,7 +37,11 @@
   <h2>🌌 Gemini Atlas</h2>
 
   <label for="projectName">PROYECTO / CARPETA</label>
-  <input type="text" id="projectName" placeholder="Ej. Marketing, Python, Personal...">
+  <div style="display: flex; gap: 5px; margin-bottom: 12px;">
+    <input type="text" id="projectName" placeholder="Ej. Marketing..." style="margin-bottom: 0; flex-grow: 1;">
+    <input type="text" id="projectIcon" placeholder="📂" style="width: 40px; text-align: center; margin-bottom: 0;" maxlength="2">
+    <input type="color" id="projectColor" value="#333333" style="width: 40px; height: 38px; padding: 0; border: none; background: none; cursor: pointer;">
+  </div>
 
   <label for="customChatName">NOMBRE DEL CHAT</label>
   <input type="text" id="customChatName" placeholder="Ej. Resumen Reunión, Script SQL...">
