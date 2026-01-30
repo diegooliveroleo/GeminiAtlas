@@ -3,20 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <style>
-    body { width: 300px; font-family: 'Segoe UI', sans-serif; padding: 15px; background: #f9f9f9; }
-    h2 { font-size: 16px; color: #1a73e8; margin-top: 0; }
-    .project-item { background: white; border: 1px solid #ddd; padding: 8px; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
-    input { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    button { background: #1a73e8; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 100%; }
+    body { width: 320px; font-family: 'Segoe UI', sans-serif; padding: 15px; background: #ffffff; }
+    h2 { font-size: 18px; color: #1e1e1e; margin-top: 0; margin-bottom: 15px; }
+    
+    label { font-size: 12px; color: #666; font-weight: 600; margin-bottom: 4px; display: block; }
+    input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+    input:focus { border-color: #1a73e8; outline: none; }
+    
+    button { background: #1a73e8; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 600; transition: background 0.2s; }
     button:hover { background: #1557b0; }
-    .chat-link { font-size: 12px; color: #555; text-decoration: none; cursor: pointer; display: block; margin-top: 4px; }
-    .chat-link:hover { color: #1a73e8; }
+    
+    hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+    
+    .project-group { margin-bottom: 15px; }
+    .project-title { font-size: 14px; color: #333; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+    .chat-link { 
+      font-size: 13px; color: #555; text-decoration: none; cursor: pointer; 
+      display: block; padding: 6px 8px; border-radius: 4px; background: #f8f9fa; margin-top: 4px; border-left: 3px solid transparent; 
+    }
+    .chat-link:hover { background: #e8f0fe; color: #1a73e8; border-left-color: #1a73e8; }
   </style>
 </head>
 <body>
-  <h2>Gemini Atlas</h2>
-  <input type="text" id="projectName" placeholder="Nombre del proyecto...">
-  <button id="addChat">Archivar chat actual aquí</button>
+  <h2>🌌 Gemini Atlas</h2>
+
+  <label for="projectName">PROYECTO / CARPETA</label>
+  <input type="text" id="projectName" placeholder="Ej. Marketing, Python, Personal...">
+
+  <label for="customChatName">NOMBRE DEL CHAT</label>
+  <input type="text" id="customChatName" placeholder="Ej. Resumen Reunión, Script SQL...">
+
+  <button id="addChat">💾 Archivar Chat</button>
+  
   <hr>
   <div id="projectList"></div>
 
