@@ -7,14 +7,23 @@
     h2 { font-size: 18px; color: #1e1e1e; margin-top: 0; margin-bottom: 15px; }
     
     label { font-size: 12px; color: #666; font-weight: 600; margin-bottom: 4px; display: block; }
-    input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-    input:focus { border-color: #1a73e8; outline: none; }
+    input, select { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+    input:focus, select:focus { border-color: #1a73e8; outline: none; }
     
     button { background: #1a73e8; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 600; transition: background 0.2s; }
     button:hover { background: #1557b0; }
     
     hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
     
+    /* Estilos para el bloque de creación de nueva carpeta */
+    #newFolderBlock {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      border: 1px solid #eee;
+    }
+
     .project-group { margin-bottom: 15px; }
     .project-title { font-size: 14px; color: #333; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
     .chat-link { 
@@ -22,29 +31,47 @@
       display: block; padding: 6px 8px; border-radius: 4px; background: #f8f9fa; margin-top: 4px; border-left: 3px solid transparent; 
     }
     .chat-link:hover { background: #e8f0fe; color: #1a73e8; border-left-color: #1a73e8; }
-
-    .project-title:hover {
-    background-color: #f1f3f4;
-    border-radius: 4px;
-}
-.chats-container {
-    border-left: 2px solid #f1f3f4; /* Línea guía visual */
-    margin-left: 6px; /* Ajuste fino */
-}
   </style>
 </head>
 <body>
   <h2>🌌 Gemini Atlas</h2>
 
-  <label for="projectName">PROYECTO / CARPETA</label>
-  <div style="display: flex; gap: 5px; margin-bottom: 12px;">
-    <input type="text" id="projectName" placeholder="Ej. Marketing..." style="margin-bottom: 0; flex-grow: 1;">
-    <input type="text" id="projectIcon" placeholder="📂" style="width: 40px; text-align: center; margin-bottom: 0;" maxlength="2">
-    <input type="color" id="projectColor" value="#333333" style="width: 40px; height: 38px; padding: 0; border: none; background: none; cursor: pointer;">
+  <label for="projectSelect">GUARDAR EN...</label>
+  <select id="projectSelect">
+    <option value="" disabled selected>Cargando carpetas...</option>
+  </select>
+
+  <div id="newFolderBlock" style="display: none;">
+    <label for="newProjectName">NOMBRE DE LA NUEVA CARPETA</label>
+    <input type="text" id="newProjectName" placeholder="Ej. Marketing...">
+    
+    <div style="display: flex; gap: 5px;">
+      <div style="flex-grow: 1;">
+        <label for="emojiSelect">ICONO</label>
+        <select id="emojiSelect" style="margin-bottom: 0;">
+          <option value="📁">📁 General</option>
+          <option value="💼">💼 Trabajo</option>
+          <option value="🎓">🎓 Estudio</option>
+          <option value="🚀">🚀 Proyectos</option>
+          <option value="💻">💻 Código</option>
+          <option value="💡">💡 Ideas</option>
+          <option value="📝">📝 Notas</option>
+          <option value="🛒">🛒 Compras</option>
+          <option value="✈️">✈️ Viajes</option>
+          <option value="🎮">🎮 Juegos</option>
+          <option value="❤️">❤️ Personal</option>
+          <option value="🤖">🤖 IA</option>
+        </select>
+      </div>
+      <div>
+        <label for="projectColor">COLOR</label>
+        <input type="color" id="projectColor" value="#333333" style="width: 50px; height: 38px; padding: 2px; margin-bottom: 0; cursor: pointer;">
+      </div>
+    </div>
   </div>
 
-  <label for="customChatName">NOMBRE DEL CHAT</label>
-  <input type="text" id="customChatName" placeholder="Ej. Resumen Reunión, Script SQL...">
+  <label for="customChatName" style="margin-top: 10px;">NOMBRE DEL CHAT</label>
+  <input type="text" id="customChatName" placeholder="Ej. Resumen Reunión...">
 
   <button id="addChat">💾 Archivar Chat</button>
   

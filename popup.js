@@ -2,30 +2,39 @@ document.addEventListener('DOMContentLoaded', function() {
   const projectList = document.getElementById('projectList');
   const addBtn = document.getElementById('addChat');
   const chatNameInput = document.getElementById('customChatName');
-  const projectNameInput = document.getElementById('projectName');
   
-  // Nuevos inputs
-  const projectIconInput = document.getElementById('projectIcon');
+  // Elementos nuevos de la UI
+  const projectSelect = document.getElementById('projectSelect');
+  const newFolderBlock = document.getElementById('newFolderBlock');
+  const newProjectNameInput = document.getElementById('newProjectName');
+  const emojiSelect = document.getElementById('emojiSelect');
   const projectColorInput = document.getElementById('projectColor');
 
-  // Recuperar la última carpeta usada y sus estilos
-  chrome.storage.local.get(['lastProject', 'projectMeta'], function(result) {
-    if (result.lastProject) {
-      projectNameInput.value = result.lastProject;
-      // Si esa carpeta tenía estilos guardados, los recuperamos para pre-rellenar
-      if (result.projectMeta && result.projectMeta[result.lastProject]) {
-        projectIconInput.value = result.projectMeta[result.lastProject].icon || '';
-        projectColorInput.value = result.projectMeta[result.lastProject].color || '#333333';
-      }
+  const NEW_PROJECT_VALUE = "__NEW_PROJECT__";
+
+  // Inicialización
+  init();
+
+  function init() {
+    // 1. Rellenar nombre del chat con fecha
+    const now = new Date();
+    chatNameInput.value = `Nota del ${now.toLocaleDateString()} ${now.getHours()}:${now.getMinutes()}`;
+
+    // 2. Cargar proyectos y configurar el desplegable
+    refreshUI();
+  }
+
+  // Escuchar cambios en el desplegable para mostrar/ocultar el bloque de "Nueva Carpeta"
+  projectSelect.addEventListener('change', (e) => {
+    if (e.target.value === NEW_PROJECT_VALUE) {
+      newFolderBlock.style.display = 'block';
+      newProjectNameInput.focus();
+    } else {
+      newFolderBlock.style.display = 'none';
     }
   });
 
-  // Pre-rellenar nombre del chat
-  const now = new Date();
-  chatNameInput.value = `Nota del ${now.toLocaleDateString()} ${now.getHours()}:${now.getMinutes()}`;
-
-  displayProjects();
-
+  // BOTÓN GUARDAR
   addBtn.addEventListener('click', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
@@ -34,112 +43,181 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    const projectName = projectNameInput.value.trim() || "General";
-    const customName = chatNameInput.value.trim() || `Chat sin nombre (${new Date().toLocaleDateString()})`;
+    const customChatName = chatNameInput.value.trim() || `Chat sin nombre (${new Date().toLocaleDateString()})`;
+    let targetFolderName = "";
     
-    // Obtenemos los nuevos valores de estilo
-    const icon = projectIconInput.value.trim() || "📁";
-    const color = projectColorInput.value;
+    // Obtener datos actuales
+    const data = await chrome.storage.local.get({ projects: {}, projectMeta: {} });
+    const projects = data.projects;
+    let projectMeta = data.projectMeta;
 
-    // Recuperamos 'projects' (chats) y 'projectMeta' (estilos)
-    chrome.storage.local.get({ projects: {}, projectMeta: {} }, function(data) {
-      const projects = data.projects;
-      const projectMeta = data.projectMeta;
+    // LÓGICA DE SELECCIÓN VS CREACIÓN
+    const selectedValue = projectSelect.value;
 
-      // 1. Guardar el Chat
-      if (!projects[projectName]) projects[projectName] = [];
-      projects[projectName].push({ 
-        title: customName, 
-        url: tab.url,
-        date: new Date().toISOString()
-      });
-
-      // 2. Guardar el Estilo (Color e Icono) de la carpeta
-      projectMeta[projectName] = { icon: icon, color: color };
+    if (selectedValue === NEW_PROJECT_VALUE) {
+      // --- MODO: CREAR NUEVA CARPETA ---
+      const newName = newProjectNameInput.value.trim();
       
-      chrome.storage.local.set({ 
-        projects: projects, 
-        projectMeta: projectMeta, // Guardamos los metadatos
-        lastProject: projectName 
-      }, () => {
-        displayProjects();
-        chatNameInput.value = ""; 
-        addBtn.innerText = "¡Guardado!";
-        setTimeout(() => addBtn.innerText = "💾 Archivar Chat", 1000);
-      });
+      if (!newName) {
+        alert("Por favor, escribe un nombre para la nueva carpeta.");
+        return;
+      }
+
+      // VERIFICACIÓN DE DUPLICADOS (Lo que pediste)
+      // Buscamos si existe (insensible a mayúsculas/minúsculas)
+      const existingName = Object.keys(projects).find(k => k.toLowerCase() === newName.toLowerCase());
+      if (existingName) {
+        alert(`❌ Ya existe una carpeta llamada "${existingName}".\n\nPor favor, selecciónala de la lista en lugar de crear una nueva.`);
+        // Opcional: Cambiar el select automáticamente a la existente
+        projectSelect.value = existingName;
+        newFolderBlock.style.display = 'none';
+        return; // Detenemos el guardado
+      }
+
+      targetFolderName = newName;
+      
+      // Guardar metadatos (Icono y Color)
+      projectMeta[targetFolderName] = {
+        icon: emojiSelect.value,
+        color: projectColorInput.value
+      };
+
+    } else {
+      // --- MODO: USAR EXISTENTE ---
+      if (!selectedValue) {
+        alert("Selecciona una carpeta o crea una nueva.");
+        return;
+      }
+      targetFolderName = selectedValue;
+    }
+
+    // Guardar el chat en la carpeta destino
+    if (!projects[targetFolderName]) projects[targetFolderName] = [];
+    
+    projects[targetFolderName].push({ 
+      title: customChatName, 
+      url: tab.url,
+      date: new Date().toISOString()
+    });
+
+    // Guardar en Storage
+    chrome.storage.local.set({ 
+      projects: projects, 
+      projectMeta: projectMeta,
+      lastProject: targetFolderName 
+    }, () => {
+      // Resetear UI
+      chatNameInput.value = ""; 
+      newProjectNameInput.value = "";
+      addBtn.innerText = "¡Guardado!";
+      setTimeout(() => addBtn.innerText = "💾 Archivar Chat", 1000);
+      
+      // Recargar lista y dropdown
+      refreshUI(); 
     });
   });
 
-  function displayProjects() {
-    projectList.innerHTML = "";
-    // Ahora pedimos también 'projectMeta'
-    chrome.storage.local.get({ projects: {}, projectMeta: {} }, function(data) {
+  function refreshUI() {
+    chrome.storage.local.get({ projects: {}, projectMeta: {}, lastProject: null }, function(data) {
       const projectNames = Object.keys(data.projects).sort();
-      const meta = data.projectMeta; // Acceso rápido a los estilos
+      
+      // A. Rellenar el Select
+      projectSelect.innerHTML = "";
+      
+      // Opción placeholder
+      const defaultOption = document.createElement('option');
+      defaultOption.text = "-- Selecciona una carpeta --";
+      defaultOption.value = "";
+      defaultOption.disabled = true;
+      if (!data.lastProject) defaultOption.selected = true;
+      projectSelect.appendChild(defaultOption);
 
-      for (const name of projectNames) {
-        const chats = data.projects[name];
-        // Recuperamos estilo guardado o usamos valores por defecto
-        const folderStyle = meta[name] || { icon: '📁', color: '#333333' };
-        
-        const groupDiv = document.createElement('div');
-        groupDiv.className = 'project-group';
-        
-        // --- TÍTULO DE LA CARPETA ---
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'project-title';
-        titleDiv.style.cursor = 'pointer';
-        titleDiv.style.userSelect = 'none';
-        
-        // Aplicamos el color elegido al texto del título
-        titleDiv.style.color = folderStyle.color; 
-        titleDiv.style.fontWeight = "bold";
+      // Opciones existentes
+      projectNames.forEach(name => {
+        const option = document.createElement('option');
+        const icon = (data.projectMeta[name] && data.projectMeta[name].icon) ? data.projectMeta[name].icon : '📁';
+        option.value = name;
+        option.text = `${icon} ${name}`;
+        if (name === data.lastProject) option.selected = true;
+        projectSelect.appendChild(option);
+      });
 
-        // HTML del título con el ICONO personalizado
-        titleDiv.innerHTML = `
-            <span style="color: #666; font-size: 10px; margin-right: 4px; display:inline-block; transition: transform 0.2s;">▶</span> 
-            <span style="margin-right: 5px;">${folderStyle.icon}</span> 
-            ${name} 
-            <span style="color: #999; font-size: 0.8em; font-weight: normal; margin-left: 5px;">(${chats.length})</span>
-        `;
-        groupDiv.appendChild(titleDiv);
-        
-        // --- CONTENEDOR DE CHATS (Acordeón) ---
-        const chatsContainer = document.createElement('div');
-        chatsContainer.className = 'chats-container';
-        chatsContainer.style.display = 'none'; // Oculto por defecto
-        
-        // Borde izquierdo del color de la carpeta para dar identidad visual
-        chatsContainer.style.borderLeft = `2px solid ${folderStyle.color}40`; // Agregamos transparencia (40) al hex
-        chatsContainer.style.marginLeft = '7px';
-        chatsContainer.style.paddingLeft = '10px';
-        
-        chats.forEach(chat => {
-          const a = document.createElement('a');
-          a.className = 'chat-link';
-          a.innerText = chat.title;
-          a.title = chat.url;
-          a.onclick = () => chrome.tabs.create({ url: chat.url });
-          chatsContainer.appendChild(a);
-        });
-        
-        groupDiv.appendChild(chatsContainer);
-        projectList.appendChild(groupDiv);
+      // Opción de crear nueva
+      const newOption = document.createElement('option');
+      newOption.value = NEW_PROJECT_VALUE;
+      newOption.text = "➕ Nueva Carpeta...";
+      newOption.style.fontWeight = "bold";
+      newOption.style.color = "#1a73e8";
+      projectSelect.appendChild(newOption);
 
-        // Lógica del click (Acordeón)
-        titleDiv.addEventListener('click', () => {
-            const isHidden = chatsContainer.style.display === 'none';
-            const arrow = titleDiv.querySelector('span'); 
-            
-            if (isHidden) {
-                chatsContainer.style.display = 'block';
-                arrow.innerText = '▼';
-            } else {
-                chatsContainer.style.display = 'none';
-                arrow.innerText = '▶';
-            }
-        });
+      // Asegurar estado correcto del bloque 'nueva carpeta'
+      if (projectSelect.value === NEW_PROJECT_VALUE) {
+        newFolderBlock.style.display = 'block';
+      } else {
+        newFolderBlock.style.display = 'none';
       }
+
+      // B. Renderizar la lista inferior (Acordeón)
+      renderProjectList(data);
     });
+  }
+
+  function renderProjectList(data) {
+    projectList.innerHTML = "";
+    const meta = data.projectMeta;
+    const projectNames = Object.keys(data.projects).sort();
+
+    for (const name of projectNames) {
+      const chats = data.projects[name];
+      const folderStyle = meta[name] || { icon: '📁', color: '#333333' };
+      
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'project-group';
+      
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'project-title';
+      titleDiv.style.cursor = 'pointer';
+      titleDiv.style.userSelect = 'none';
+      titleDiv.style.color = folderStyle.color;
+      titleDiv.style.fontWeight = "bold";
+
+      titleDiv.innerHTML = `
+          <span style="color: #666; font-size: 10px; margin-right: 4px; display:inline-block; transition: transform 0.2s;">▶</span> 
+          <span style="margin-right: 5px;">${folderStyle.icon}</span> 
+          ${name} 
+          <span style="color: #999; font-size: 0.8em; font-weight: normal; margin-left: 5px;">(${chats.length})</span>
+      `;
+      groupDiv.appendChild(titleDiv);
+      
+      const chatsContainer = document.createElement('div');
+      chatsContainer.style.display = 'none';
+      chatsContainer.style.borderLeft = `2px solid ${folderStyle.color}40`;
+      chatsContainer.style.marginLeft = '7px';
+      chatsContainer.style.paddingLeft = '10px';
+      
+      chats.forEach(chat => {
+        const a = document.createElement('a');
+        a.className = 'chat-link';
+        a.innerText = chat.title;
+        a.title = chat.url;
+        a.onclick = () => chrome.tabs.create({ url: chat.url });
+        chatsContainer.appendChild(a);
+      });
+      
+      groupDiv.appendChild(chatsContainer);
+      projectList.appendChild(groupDiv);
+
+      titleDiv.addEventListener('click', () => {
+          const isHidden = chatsContainer.style.display === 'none';
+          const arrow = titleDiv.querySelector('span'); 
+          if (isHidden) {
+              chatsContainer.style.display = 'block';
+              arrow.innerText = '▼';
+          } else {
+              chatsContainer.style.display = 'none';
+              arrow.innerText = '▶';
+          }
+      });
+    }
   }
 });
